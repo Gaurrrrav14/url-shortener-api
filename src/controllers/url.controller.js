@@ -6,6 +6,9 @@ import {
   getUrlStats
 } from '../services/url.service.js';
 
+import { clickQueue } from '../config/queue.js';
+import crypto from 'crypto';
+
 // POST /api/urls
 export async function createShortUrl(req, res) {
   const { original_url } = req.body;
@@ -21,10 +24,23 @@ export async function createShortUrl(req, res) {
 }
 
 // GET /:code
+
 export async function redirectUrl(req, res) {
   const { code } = req.params;
 
-  const originalUrl = await resolveUrl(code);
+  const { id, originalUrl } = await resolveUrl(code);
+
+  // Hash IP (privacy-safe)
+  const ip = req.ip;
+  const ipHash = crypto.createHash('sha256').update(ip).digest('hex');
+
+  // Add async job (DO NOT await)
+  clickQueue.add('click', {
+    urlId: id,
+    userAgent: req.headers['user-agent'] || '',
+    ipHash,
+    timestamp: Date.now(),
+  });
 
   res.redirect(302, originalUrl);
 }

@@ -85,3 +85,14 @@ export async function countClicksByUrlId(urlId) {
   const { rows } = await pool.query(query, [urlId]);
   return Number(rows[0].total);
 }
+
+export async function countClicksLast24hByUrlId(urlId) {
+  const query = `
+    SELECT COUNT(*) AS count
+    FROM clicks
+    WHERE url_id = $1
+      AND clicked_at > NOW() - INTERVAL '24 hours';
+  `;
+  const { rows } = await pool.query(query, [urlId]);
+  return Number(rows[0].count);
+}

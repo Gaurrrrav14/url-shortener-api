@@ -8,7 +8,8 @@ import {
   findByUserId,
   deleteByCode,
   findByUserIdWithClicks,
-  countClicksByUrlId
+  countClicksByUrlId,
+  countClicksLast24hByUrlId
 } from '../repositories/url.repository.js';
 import { NotFoundError } from '../utils/errors.js';
 import { ForbiddenError } from '../utils/errors.js';
@@ -43,7 +44,7 @@ export async function resolveUrl(code) {
   try {
     const cached = await redis.get(cacheKey);
     if (cached) {
-      return cached;
+      return JSON.parse(cached); // { id, originalUrl }
     }
   } catch (err) {
     console.error('Redis GET error:', err.message);
@@ -67,16 +68,19 @@ export async function resolveUrl(code) {
     }
   }
 
-  const originalUrl = row.original_url;
+  const result = {
+    id: row.id,
+    originalUrl: row.original_url,
+  };
 
   // 4. Store in Redis (cache-aside)
   try {
-    await redis.setex(cacheKey, 3600, originalUrl); // 1 hour TTL
+    await redis.setex(cacheKey, 3600, JSON.stringify(result)); // 1 hour TTL
   } catch (err) {
     console.error('Redis SET error:', err.message);
   }
 
-  return originalUrl;
+  return result;
 }
 
 
@@ -109,15 +113,28 @@ export async function getUrlStats(code, userId) {
     throw new NotFoundError('URL not found');
   }
 
-  // 🔐 Ownership check (CRITICAL)
+  // Ownership check
   if (row.user_id !== userId) {
     throw new ForbiddenError();
   }
 
-  const totalClicks = await countClicksByUrlId(row.id);
+  const urlId = row.id;
+
+  // 1. Redis → total clicks (fast)
+  let totalClicks = 0;
+  try {
+    const cached = await redis.get(`clicks:${urlId}`);
+    totalClicks = cached ? Number(cached) : 0;
+  } catch (err) {
+    console.error('Redis GET error:', err.message);
+  }
+
+  // 2. Repository → last 24h clicks
+  const clicksLast24h = await countClicksLast24hByUrlId(urlId);
 
   return {
     totalClicks,
+    clicksLast24h,
     createdAt: row.created_at,
     originalUrl: row.original_url,
   };

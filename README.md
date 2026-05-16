@@ -14,6 +14,7 @@ A production-oriented URL shortener service built with Node.js, PostgreSQL, and 
 * Background processing with BullMQ
 * Docker-based environment for consistent setup
 * Clear separation of concerns (Controller → Service → Repository)
+* Asynchronous click tracking using BullMQ and Redis counters
 
 ---
 
@@ -33,10 +34,14 @@ Express API (Node.js)
   │
   ├── PostgreSQL (persistent storage)
   │
-  └── Redis
-        ├── Cache (URL resolution)
-        ├── Rate limiter
-        └── Queue (BullMQ worker)
+  ├── Redis
+  │     ├── Cache (URL resolution)
+  │     ├── Rate limiter
+  │     └── Queue (BullMQ)
+  │
+  └── BullMQ Worker (separate process)
+        └── Processes click events → PostgreSQL + Redis counters
+  
 ```
 
 ---
@@ -52,7 +57,7 @@ Express API (Node.js)
 | Zod               | Runtime validation and schema enforcement  |
 | JWT               | Stateless authentication                   |
 | Docker            | Environment reproducibility                |
-
+| BullMQ Worker     | Async click processing and retry handling  |
 ---
 
 ## Setup
@@ -234,6 +239,9 @@ Raw SQL offers better performance, transparency, and control over queries.
 
 Avoids permanent caching, allowing flexibility for future changes or expirations.
 
+### Asynchronous Click Tracking
+
+This design ensures that redirect requests remain constant-time operations, as no database writes occur on the critical request path. Under load, this significantly improves throughput and reduces latency compared to synchronous designs.
 ---
 
 ## Database Schema
