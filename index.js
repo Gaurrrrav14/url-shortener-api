@@ -72,17 +72,7 @@ app.use((err, req, res, next) => {
       error: err.message,
     });
   }
-
-  // 2. Handle Zod validation errors
-//   if (err instanceof ZodError) {
-//   return res.status(400).json({
-//     error: 'Validation failed',
-//     details: err.issues.map((e) => ({
-//       field: e.path.join('.'),
-//       message: e.message,
-//     })),
-//   });
-// }
+  // 2. Handle validation errors
 
 if (err instanceof ZodError) {
   return res.status(400).json({
@@ -106,5 +96,5 @@ if (err instanceof ZodError) {
  * Start server
  */
 app.listen(env.PORT, () => {
-  console.log(`🚀 Server running on port ${env.PORT}`);
+  console.log(` Server running on port ${env.PORT}`);
 });

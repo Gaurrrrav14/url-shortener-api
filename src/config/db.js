@@ -17,11 +17,11 @@ const pool = new Pool({
  
 pool.connect()
   .then((client) => {
-    console.log("🟢 PostgreSQL pool initialized");
+    console.log(" PostgreSQL pool initialized");
     client.release(); // VERY IMPORTANT
   })
   .catch((err) => {
-    console.error("🔴 Postgres connection failed:", err.message);
+    console.error(" Postgres connection failed:", err.message);
     process.exit(1);
   });
 
@@ -32,7 +32,7 @@ pool.on("connect", () => {
 
 //Handle unexpected errors on idle clients
 pool.on("error", (err) => {
-  console.error("🔴 Unexpected PostgreSQL error:", err);
+  console.error(" Unexpected PostgreSQL error:", err);
   process.exit(1);
 });
 

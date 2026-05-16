@@ -26,11 +26,11 @@ const worker = new Worker(
 
 // Logging (important for debugging)
 worker.on('completed', (job) => {
-  console.log(`✅ Click processed for URL ${job.data.urlId}`);
+  console.log(`Click processed for URL ${job.data.urlId}`);
 });
 
 worker.on('failed', (job, err) => {
-  console.error(`❌ Job failed for URL ${job?.data?.urlId}:`, err.message);
+  console.error(`Job failed for URL ${job?.data?.urlId}:`, err.message);
 });
 
-console.log('🚀 Click worker started');
+console.log('Click worker started');

@@ -11,22 +11,22 @@ const redis = new Redis(env.REDIS_URL, {
 
 //Connection success
 redis.on('connect', () => {
-  console.log('🟢 Redis connected');
+  console.log(' Redis connected');
 });
 
 //Ready (fully usable)
 redis.on('ready', () => {
-  console.log('🟢 Redis ready');
+  console.log(' Redis ready');
 });
 
 //MUST HAVE — prevents crash on Redis failure
 redis.on('error', (err) => {
-  console.error('🔴 Redis error:', err);
+  console.error(' Redis error:', err);
 });
 
 //Optional but useful
 redis.on('close', () => {
-  console.warn('🟡 Redis connection closed');
+  console.warn(' Redis connection closed');
 });
 
 export default redis;
