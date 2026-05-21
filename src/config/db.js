@@ -1,5 +1,6 @@
 import pkg from "pg";
 import env from "./env.js";
+import { registerType } from "pgvector/pg";
 
 const { Pool } = pkg;
 
@@ -11,23 +12,16 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-
   // Fail-fast startup check
   // Ensures DB is reachable when app boots
  
-pool.connect()
-  .then((client) => {
-    console.log(" PostgreSQL pool initialized");
-    client.release(); // VERY IMPORTANT
-  })
-  .catch((err) => {
-    console.error(" Postgres connection failed:", err.message);
-    process.exit(1);
-  });
-
-//Log whenever a new client is created
-pool.on("connect", () => {
-  console.log("PostgreSQL connected");
+pool.on("connect", async (client) => {
+  try {
+    await registerType(client);
+    console.log("PostgreSQL connected + pgvector registered");
+  } catch (err) {
+    console.error("pgvector registration failed:", err.message);
+  }
 });
 
 //Handle unexpected errors on idle clients

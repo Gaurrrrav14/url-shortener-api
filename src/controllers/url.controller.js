@@ -9,6 +9,8 @@ import {
 import { clickQueue } from '../config/queue.js';
 import crypto from 'crypto';
 
+import { searchUrls } from '../services/url.service.js';
+
 // POST /api/urls
 export async function createShortUrl(req, res) {
   const { original_url } = req.body;
@@ -79,4 +81,12 @@ export async function getUrlStatsController(req, res) {
   const stats = await getUrlStats(code, userId);
 
   res.status(200).json(stats);
+}
+
+export async function searchUrlsController(req, res) {
+  const { q } = req.query;
+
+  const results = await searchUrls(q);
+
+  res.status(200).json(results);
 }

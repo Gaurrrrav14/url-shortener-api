@@ -25,6 +25,14 @@ const envSchema = z.object({
     .string()
     .min(1, "BASE_URL is required")
     .url("BASE_URL must be a valid URL"),
+
+    GEMINI_API_KEY: z
+    .string()
+    .min(1, "GEMINI_API_KEY is required"),
+
+    // LANGCHAIN_TRACING_V2: z.string(),
+    // LANGCHAIN_API_KEY: z.string(),
+    // LANGCHAIN_PROJECT: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

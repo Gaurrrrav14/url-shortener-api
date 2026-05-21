@@ -6,7 +6,8 @@ import {
   createShortUrl,
   getUserUrls,
   deleteUrl,
-  getUrlStatsController
+  getUrlStatsController,
+  searchUrlsController
 } from '../controllers/url.controller.js';
 import { rateLimiter } from '../middleware/rateLimiter.middleware.js';
 const router = Router();
@@ -15,6 +16,7 @@ const router = Router();
 router.post('/', authenticate, rateLimiter, createShortUrl);
 router.get('/', authenticate, getUserUrls);
 router.delete('/:code', authenticate, deleteUrl);
+router.get('/search', searchUrlsController);
 router.get('/:code/stats', authenticate, getUrlStatsController);
 
 export default router;

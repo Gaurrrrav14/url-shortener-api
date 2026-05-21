@@ -16,6 +16,11 @@ import { ForbiddenError } from '../utils/errors.js';
 
 import redis from '../config/redis.js';
 
+import { embeddingQueue } from "../config/queue.js";
+
+import { searchUrlsByEmbedding } from '../repositories/url.repository.js';
+import { generateEmbedding } from './embedding.service.js';
+
 const urlSchema = z.string().url();
 
 export async function shortenUrl(originalUrl, userId = null) {
@@ -32,6 +37,11 @@ export async function shortenUrl(originalUrl, userId = null) {
   const shortCode = encode(row.id);
 
   await updateShortCode(row.id, shortCode);
+
+  await embeddingQueue.add("generate-embedding", {
+  urlId: row.id,
+  originalUrl: row.original_url,
+});
 
   return `${env.BASE_URL}/${shortCode}`;
 }
@@ -138,4 +148,38 @@ export async function getUrlStats(code, userId) {
     createdAt: row.created_at,
     originalUrl: row.original_url,
   };
+}
+
+export async function searchUrls(query) {
+  if (!query || typeof query !== 'string') {
+    throw new Error('Invalid search query');
+  }
+
+  const cleanedQuery = query.trim();
+
+  // ✅ Keep SAME input shape — just cleaner values
+  const embedding = await generateEmbedding({
+    title: cleanedQuery,
+    description: "",
+    originalUrl: "",
+  });
+
+  if (!embedding) {
+    throw new Error('Failed to generate embedding');
+  }
+
+  const results = await searchUrlsByEmbedding(embedding);
+
+  const formatted = results.map((row) => ({
+    shortCode: row.short_code,
+    originalUrl: row.original_url,
+    title: row.page_title,
+    summary: row.page_summary,
+    similarity: Number((1 / (1 + row.distance)).toFixed(4)),
+    createdAt: row.created_at,
+  }));
+
+  // ✅ IMPORTANT: re-sort globally by similarity
+  // DISTINCT ON breaks global ordering otherwise
+  return formatted.sort((a, b) => b.similarity - a.similarity);
 }

@@ -96,3 +96,54 @@ export async function countClicksLast24hByUrlId(urlId) {
   const { rows } = await pool.query(query, [urlId]);
   return Number(rows[0].count);
 }
+
+export async function updateUrlEmbedding({
+  urlId,
+  embedding,
+  title,
+  summary,
+}) {
+  const formattedEmbedding = `[${embedding.join(",")}]`;
+
+  const query = `
+    UPDATE urls
+    SET 
+      embedding = $1::vector,
+      page_title = $2,
+      page_summary = $3
+    WHERE id = $4
+  `;
+
+  await pool.query(query, [
+    formattedEmbedding,
+    title,
+    summary,
+    urlId,
+  ]);
+}
+
+export async function searchUrlsByEmbedding(queryEmbedding, limit = 10) {
+  const formattedEmbedding = `[${queryEmbedding.join(",")}]`;
+
+  const query = `
+    SELECT DISTINCT ON (original_url)
+      id,
+      original_url,
+      short_code,
+      page_title,
+      page_summary,
+      created_at,
+      embedding <-> $1::vector AS distance
+    FROM urls
+    WHERE embedding IS NOT NULL
+    ORDER BY original_url, distance ASC
+    LIMIT $2
+  `;
+
+  const { rows } = await pool.query(query, [
+    formattedEmbedding,
+    limit,
+  ]);
+
+  return rows;
+}

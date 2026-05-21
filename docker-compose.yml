@@ -15,9 +15,9 @@ services:
         condition: service_started
     restart: "no"
   
-  worker:
+  click-worker:
     build: .
-    container_name: url-shortener-worker
+    container_name: url-shortener-click-worker
     command: node src/workers/click.worker.js
     env_file:
       - .env
@@ -28,8 +28,25 @@ services:
         condition: service_started
     restart: unless-stopped
 
+
+  embedding-worker:
+    build: .
+    container_name: url-shortener-embedding-worker
+    command: node src/workers/embedding.worker.js
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+    
+
   postgres:
-    image: postgres:15-alpine
+    # image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: url-shortener-postgres
     ports: 
       - "5432:5432"
